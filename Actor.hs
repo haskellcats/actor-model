@@ -33,8 +33,16 @@ instance Num Data where
   DInt x * DInt y = DInt (x * y)
   _ * _ = error "incompatible dynamic types for Data *"
   negate (DInt x) = DInt (negate x)
+  negate _ = error "Data negate: not a number"
   abs (DInt x) = DInt (abs x)
+  abs _ = error "Data abs: not a number"
   signum (DInt x) = DInt (signum x)
+  signum _ = error "Data signum: not a number"
+
+instance Monoid Data where
+  mempty = DStr ""
+  mappend (DStr x) (DStr y) = DStr (x ++ y)
+  mappend _ _ = error "Data <>: incompatible dynamic types for concat"
 
 instance Integral Data where
   toInteger (DInt i) = i

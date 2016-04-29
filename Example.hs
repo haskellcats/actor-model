@@ -3,6 +3,7 @@ module Example where
 
 import Actor
 import Control.Monad.Trans (liftIO)
+import Control.Concurrent
 
 inactive :: Address -> Handler
 inactive self = Handler (\_ -> return (unit, inactive self))
@@ -41,6 +42,7 @@ test self = Handler $ \"start" -> do
   debug x
   unbounded <- spawn newUnbounded
   send unbounded "go"
+  liftIO $ threadDelay 1000
   i <- send unbounded "stop"
   debug "unbounded answer:"
   debug i
