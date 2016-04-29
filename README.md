@@ -1,6 +1,6 @@
 # Actor Model Example
 
-Actors handle messages sent to them by sending messages to an address, spawning
+Actors handle messages sent to them either by sending other messages, spawning
 other actors, or modifying their behavior with respect to future messages.
 Actors are provided their own address when spawned to allow recursion.
 
