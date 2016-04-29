@@ -16,7 +16,7 @@ import qualified Data.ByteString as BS
 
 data Data =
   DNull |
-  DAddr Integer (MVar (MVar Data, Message)) |
+  DAddr Integer (Chan (MVar Data, Message)) |
   DInt Integer |
   DStr String |
   Data :@ Data |
@@ -135,35 +135,35 @@ runActor mkH = do
   let Actor run = spawn mkH
   i <- randomRIO (2^128, 2^129)
   counter <- newMVar i
-  DAddr _ mv <- run counter
+  DAddr _ ch <- run counter
   mv' <- newEmptyMVar
-  putMVar mv (mv', "start")
+  writeChan ch (mv', "start")
   answer <- takeMVar mv'
   print answer
   forever (threadDelay 10000000)
 
 spawn :: (Address -> Handler) -> Actor Address
 spawn mkH = Actor $ \counter -> do
-  mv <- newEmptyMVar
+  ch <- newChan
   i <- modifyMVar counter (\i -> return (i+1, i))
-  let addr = DAddr i mv
-  forkIO (actor counter mv (mkH addr))
+  let addr = DAddr i ch
+  forkIO (actor counter ch (mkH addr))
   return addr
 
 send :: Address -> Message -> Actor Data
 send addr m = Actor $ \_ -> do
-  let (DAddr _ mv) = addr
+  let (DAddr _ ch) = addr
   mv' <- newEmptyMVar
-  putMVar mv (mv', m)
+  writeChan ch (mv', m)
   return (DFut mv')
 
-actor :: MVar Integer -> MVar (MVar Data, Message) -> Handler -> IO ()
-actor counter mv (Handler h) = do
-  (mv', m) <- takeMVar mv
+actor :: MVar Integer -> Chan (MVar Data, Message) -> Handler -> IO ()
+actor counter ch (Handler h) = do
+  (mv', m) <- readChan ch
   let (Actor run) = h m
   (x, h') <- run counter
   putMVar mv' x
-  actor counter mv h'
+  actor counter ch h'
 
 debug :: Show a => a -> Actor ()
 debug x = do

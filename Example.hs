@@ -18,6 +18,13 @@ newRng self = Handler (h 0) where
     let u = (1664525*s + 1013904223) `mod` 2^32
     return (s, Handler (h u))
 
+newUnbounded :: Address -> Handler
+newUnbounded self = Handler (h 0) where
+  h i "stop" = return (i, inactive self)
+  h i "go" = do
+    send self "go"
+    return (unit, Handler (h (i+1)))
+
 test :: Address -> Handler
 test self = Handler $ \"start" -> do
   debug self
@@ -32,4 +39,9 @@ test self = Handler $ \"start" -> do
   debug x
   x <- send atom ("swap" :@ 13)
   debug x
+  unbounded <- spawn newUnbounded
+  send unbounded "go"
+  i <- send unbounded "stop"
+  debug "unbounded answer:"
+  debug i
   return (unit, inactive self)
